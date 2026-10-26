@@ -1,6 +1,6 @@
 // core.js — utilidades comunes a las tres propuestas: datos, formato, ranking, silueta, serie.
 import geo from '../data/regiones-chile.json';
-import ejemplo from '../data/ejemplo.json';
+import tt1 from '../data/tt1.json';
 import { normalizar, desdeCSV, fuentes, serieDe, CODIGOS, OBSERVADO_ID } from './datos.js';
 import { proyectar } from './mapa3d.js';
 
@@ -9,13 +9,13 @@ export const NOMBRE = Object.fromEntries(geo.regiones.map((r) => [r.codigo, r.no
 // Numeración romana tradicional de las regiones (como se enseña en el colegio).
 export const ROMANO = { 15: 'XV', 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 13: 'RM', 6: 'VI', 7: 'VII', 16: 'XVI', 8: 'VIII', 9: 'IX', 14: 'XIV', 10: 'X', 11: 'XI', 12: 'XII' };
 
-/** Si existe datos/predicciones.json junto a la página, se usa; si no, el ejemplo sintético. */
+/** Si existe datos/predicciones.json junto a la página, se usa; si no, los valores de TT1 incrustados. */
 export async function datosIniciales() {
   try {
     const r = await fetch('./datos/predicciones.json', { cache: 'no-store' });
     if (r.ok && (r.headers.get('content-type') ?? '').includes('json')) return { datos: normalizar(await r.json()), esEjemplo: false };
-  } catch { /* sin archivo: ejemplo */ }
-  return { datos: normalizar(ejemplo), esEjemplo: true };
+  } catch { /* sin archivo: datos de TT1 */ }
+  return { datos: normalizar(tt1), esEjemplo: false };
 }
 
 export async function leerArchivos(archivos) {

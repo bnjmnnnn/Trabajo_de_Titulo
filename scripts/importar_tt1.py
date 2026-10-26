@@ -13,7 +13,7 @@ que es la tasa de concentración, variable objetivo principal del trabajo:
 
 Uso:
   python scripts/importar_tt1.py --tt1 ../TT1
-  (luego scripts/exportar_predicciones.py arma public/datos/predicciones.json; este script lo llama)
+  (luego scripts/exportar_predicciones.py arma src/data/tt1.json, que va incrustado en el build)
 """
 import argparse, csv, math, pathlib, subprocess, sys
 
@@ -104,7 +104,7 @@ def main():
                     "--titulo", "Concentración de población inmigrante por región",
                     "--variable", "Población inmigrante sobre el total nacional", "--unidad", "%",
                     "--decimales", "2", "--nota", nota,
-                    "--salida", str(aqui.parent / "public/datos/predicciones.json")], check=True)
+                    "--salida", str(aqui.parent / "src/data/tt1.json")], check=True)
 
 if __name__ == "__main__":
     main()

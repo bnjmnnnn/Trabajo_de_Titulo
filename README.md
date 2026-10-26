@@ -69,7 +69,8 @@ scripts/           exportar_predicciones.py, generar_ejemplo.py, preparar_geo.py
 ```
 
 ## Datos reales de TT1
-`public/datos/predicciones.json` trae los valores reales de los dos modelos elegidos en TT1:
+**`dist-single/index.html` es el mapa listo**: un solo archivo que abre con doble clic y trae incrustados
+(desde `src/data/tt1.json`) los valores reales de los dos modelos elegidos en TT1:
 
 - **Modelo 4 · Gradient Boosting (redistribución)**: el que le gana a la persistencia en el reparto
   territorial según el skill score de Murphy (1988): +0,648 (test 2023) y +0,694 (test 2022).
@@ -80,7 +81,9 @@ Todo va como % del total nacional (tasa de concentración); el observado es 2020
 desde la carpeta del TT (los CSV intermedios quedan en `scripts/tt1/`):
 ```bash
 python scripts/importar_tt1.py --tt1 ../TT1
+npm run build:single
 ```
+Si se deja un `datos/predicciones.json` junto a la página, ese archivo reemplaza a los datos incrustados.
 
 ## Notas y límites
 - `src/data/ejemplo.json` es sintético: solo se usa si falta `public/datos/predicciones.json`.
