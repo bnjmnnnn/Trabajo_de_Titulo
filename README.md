@@ -47,7 +47,7 @@ Tienes dos caminos:
    python scripts/exportar_predicciones.py --pred predicciones.csv --obs observado.csv \
      --titulo "Concentración de población inmigrante" --variable "Población inmigrante" --unidad "%"
    ```
-   Al abrir la página, si existe `datos/predicciones.json` se usa; si no, se muestran los datos de ejemplo.
+   Al abrir la página, si existe `datos/predicciones.json` se usa; si no, se usan los datos de TT1 incrustados.
 
 ## Desplegar (una sola página)
 ```bash
