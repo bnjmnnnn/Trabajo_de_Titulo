@@ -1,4 +1,4 @@
-// core.js — utilidades comunes a las tres propuestas: datos, formato, ranking, silueta, serie.
+// core.js — utilidades del mapa: datos, formato, ranking, silueta, serie.
 import geo from '../data/regiones-chile.json';
 import tt1 from '../data/tt1.json';
 import { normalizar, desdeCSV, fuentes, serieDe, CODIGOS, OBSERVADO_ID } from './datos.js';
@@ -48,7 +48,7 @@ export function ranking(datos, fuente, i) {
 
 export const esProyeccion = (datos, i) => datos.observadoHasta != null && datos.periodos[i] > datos.observadoHasta;
 
-/** Ficha de una región en un periodo: lo que muestran los detalles de las tres propuestas. */
+/** Ficha de una región en un periodo: lo que muestra el extendido. */
 export function ficha(datos, fuente, cod, i) {
   const s = serieDe(datos, fuente, cod)[i];
   const obs = fuente === OBSERVADO_ID ? null : datos.observado?.[cod]?.[i] ?? null;

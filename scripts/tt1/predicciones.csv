@@ -1,20 +1,36 @@
 modelo,codigo_region,periodo,prediccion
-Modelo 4 · Gradient Boosting (redistribución),15,2023,2.1505
-Modelo 4 · Gradient Boosting (redistribución),1,2023,4.995
-Modelo 4 · Gradient Boosting (redistribución),2,2023,7.1901
-Modelo 4 · Gradient Boosting (redistribución),3,2023,1.4211
-Modelo 4 · Gradient Boosting (redistribución),4,2023,2.4991
-Modelo 4 · Gradient Boosting (redistribución),5,2023,6.6201
-Modelo 4 · Gradient Boosting (redistribución),13,2023,60.8077
-Modelo 4 · Gradient Boosting (redistribución),6,2023,3.1778
-Modelo 4 · Gradient Boosting (redistribución),7,2023,2.8124
-Modelo 4 · Gradient Boosting (redistribución),16,2023,0.8254
-Modelo 4 · Gradient Boosting (redistribución),8,2023,2.549
-Modelo 4 · Gradient Boosting (redistribución),9,2023,1.4379
-Modelo 4 · Gradient Boosting (redistribución),14,2023,0.5468
-Modelo 4 · Gradient Boosting (redistribución),10,2023,1.9551
-Modelo 4 · Gradient Boosting (redistribución),11,2023,0.2546
-Modelo 4 · Gradient Boosting (redistribución),12,2023,0.7042
+Modelo 4 · Gradient Boosting (redistribución),15,2022,2.2724
+Modelo 4 · Gradient Boosting (redistribución),1,2022,4.9954
+Modelo 4 · Gradient Boosting (redistribución),2,2022,7.0743
+Modelo 4 · Gradient Boosting (redistribución),3,2022,1.3278
+Modelo 4 · Gradient Boosting (redistribución),4,2022,2.4009
+Modelo 4 · Gradient Boosting (redistribución),5,2022,6.6309
+Modelo 4 · Gradient Boosting (redistribución),13,2022,61.3572
+Modelo 4 · Gradient Boosting (redistribución),6,2022,3.0831
+Modelo 4 · Gradient Boosting (redistribución),7,2022,2.7953
+Modelo 4 · Gradient Boosting (redistribución),16,2022,0.7697
+Modelo 4 · Gradient Boosting (redistribución),8,2022,2.4636
+Modelo 4 · Gradient Boosting (redistribución),9,2022,1.4426
+Modelo 4 · Gradient Boosting (redistribución),14,2022,0.5543
+Modelo 4 · Gradient Boosting (redistribución),10,2022,1.9181
+Modelo 4 · Gradient Boosting (redistribución),11,2022,0.263
+Modelo 4 · Gradient Boosting (redistribución),12,2022,0.6849
+Modelo 4 · Gradient Boosting (redistribución),15,2023,2.099
+Modelo 4 · Gradient Boosting (redistribución),1,2023,5.0343
+Modelo 4 · Gradient Boosting (redistribución),2,2023,7.1933
+Modelo 4 · Gradient Boosting (redistribución),3,2023,1.4281
+Modelo 4 · Gradient Boosting (redistribución),4,2023,2.4821
+Modelo 4 · Gradient Boosting (redistribución),5,2023,6.6439
+Modelo 4 · Gradient Boosting (redistribución),13,2023,60.5601
+Modelo 4 · Gradient Boosting (redistribución),6,2023,3.1903
+Modelo 4 · Gradient Boosting (redistribución),7,2023,2.8115
+Modelo 4 · Gradient Boosting (redistribución),16,2023,0.8378
+Modelo 4 · Gradient Boosting (redistribución),8,2023,2.5581
+Modelo 4 · Gradient Boosting (redistribución),9,2023,1.4628
+Modelo 4 · Gradient Boosting (redistribución),14,2023,0.5456
+Modelo 4 · Gradient Boosting (redistribución),10,2023,1.9506
+Modelo 4 · Gradient Boosting (redistribución),11,2023,0.2538
+Modelo 4 · Gradient Boosting (redistribución),12,2023,0.6961
 Conteo · Random Forest,15,2023,2.1271
 Conteo · Random Forest,1,2023,4.951
 Conteo · Random Forest,2,2023,7.2059

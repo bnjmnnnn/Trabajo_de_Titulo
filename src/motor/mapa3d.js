@@ -1,8 +1,5 @@
-// mapa3d.js — motor Three.js compartido por las tres propuestas.
-// Regiones extruidas con un shader propio que cambia de "material" según el tema:
-//   grabado  → tramado de líneas tipo estampilla (densidad = valor)
-//   solido   → color plano con luz suave (mapa del tiempo)
-//   terrazas → tintas hipsométricas + curvas de nivel en las paredes (carta topográfica)
+// mapa3d.js — motor Three.js del mapa Pronóstico.
+// Regiones extruidas con un shader propio: color plano según el valor, con luz suave (mapa del tiempo).
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
@@ -12,7 +9,6 @@ const LAT0 = -36, LON0 = -71;
 const KX = Math.cos(THREE.MathUtils.degToRad(LAT0));
 export const proyectar = (lon, lat) => new THREE.Vector2((lon - LON0) * KX, lat - LAT0);
 const ALTURA_MIN = 0.05;
-const MODOS = { grabado: 0, solido: 1, terrazas: 2 };
 
 const VERT = /* glsl */`
   varying vec3 vW; varying vec3 vN;
@@ -23,54 +19,15 @@ const VERT = /* glsl */`
     gl_Position = projectionMatrix * viewMatrix * w;
   }`;
 const FRAG = /* glsl */`
-  uniform int uModo;
-  uniform vec3 uColor; uniform vec3 uPapel; uniform vec3 uTinta; uniform vec3 uLuz;
-  uniform float uValor; uniform float uResalte; uniform float uAlturaMax; uniform float uPaso; uniform float uFrec;
-  uniform vec3 uRampa[6];
+  uniform vec3 uColor; uniform vec3 uLuz;
+  uniform float uValor; uniform float uResalte;
   varying vec3 vW; varying vec3 vN;
-  vec3 rampa(float t) {
-    t = clamp(t, 0.0, 1.0) * 5.0;
-    int i = int(min(floor(t), 4.0)); float f = t - float(i);
-    vec3 a = uRampa[0], b = uRampa[1];
-    for (int k = 0; k < 5; k++) if (k == i) { a = uRampa[k]; b = uRampa[k + 1]; }
-    return mix(a, b, f);
-  }
-  float linea(float s, float w) {
-    float d = abs(fract(s) - 0.5) * 2.0;           // 0 en el centro del hueco, 1 sobre la línea
-    float aa = fwidth(s) * 1.6;
-    return smoothstep(1.0 - w - aa, 1.0 - w + aa, d);
-  }
   void main() {
     vec3 n = normalize(vN);
     float L = clamp(dot(n, normalize(uLuz)) * 0.5 + 0.5, 0.0, 1.0);
     bool tapa = n.y > 0.5;
-    vec3 col;
-    if (uModo == 0) {
-      // Grabado: en la tapa, líneas diagonales cuyo grosor crece con el valor;
-      // en las paredes, líneas horizontales más densas en la cara en sombra.
-      float ink;
-      if (tapa) {
-        float v = pow(uValor, 0.45);
-        ink = linea((vW.x + vW.z) * uFrec, mix(0.015, 0.86, v));
-        if (v > 0.4) ink = max(ink, linea((vW.x - vW.z) * uFrec, (v - 0.4) * 1.4));
-      } else {
-        ink = linea(vW.y * uFrec * 1.4, mix(0.42, 0.92, 1.0 - L));
-      }
-      ink = max(ink, uResalte * 0.35);
-      col = mix(uPapel, uTinta, ink);
-    } else if (uModo == 1) {
-      col = tapa ? uColor * (0.96 + 0.04 * L) : uColor * (0.52 + 0.38 * L);
-      col = mix(col, vec3(1.0), uResalte * 0.22);
-    } else {
-      float h = vW.y / max(uAlturaMax, 0.001);
-      col = rampa(h);
-      if (!tapa) {
-        col *= 0.72 + 0.3 * L;
-        float c = linea(vW.y / uPaso, 0.12);          // curva de nivel
-        col = mix(col, uTinta, c * 0.75);
-      }
-      col = mix(col, uTinta, uResalte * 0.18);
-    }
+    vec3 col = tapa ? uColor * (0.96 + 0.04 * L) : uColor * (0.52 + 0.38 * L);
+    col = mix(col, vec3(1.0), uResalte * 0.22);
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }`;
@@ -80,7 +37,7 @@ const FRAG = /* glsl */`
  * @param {HTMLCanvasElement} o.canvas
  * @param {HTMLElement} o.capaEtiquetas
  * @param {object} o.geo
- * @param {object} o.tema  { material, fondo, suelo, sueloVisible, reticula{visible,color,opacidad,etiquetas}, papel, tinta, borde{color,opacidad}, orientacion, frecuencia, rampa[6], inclinacion }
+ * @param {object} o.tema  { fondo, suelo, sueloVisible, reticula{visible,color,opacidad,etiquetas}, borde{color,opacidad}, orientacion, inclinacion }
  */
 export function crearMapa({ canvas, capaEtiquetas, geo, tema, alSeleccionar, alHover, alCuadro }) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -129,7 +86,6 @@ export function crearMapa({ canvas, capaEtiquetas, geo, tema, alSeleccionar, alH
   }
 
   const luz = new THREE.Vector3(-0.5, 0.9, 0.7);
-  const rampa = (tema.rampa ?? ['#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff']).map((c) => new THREE.Color(c));
   const regiones = new Map();
   const bordeMat = new THREE.LineBasicMaterial({ color: tema.borde?.color ?? 0x000000, transparent: true, opacity: tema.borde?.opacidad ?? 0.6 });
   for (const r of geo.regiones) {
@@ -142,17 +98,10 @@ export function crearMapa({ canvas, capaEtiquetas, geo, tema, alSeleccionar, alH
     geom.rotateX(-Math.PI / 2);
     geom.computeBoundingBox();
     const uniforms = {
-      uModo: { value: MODOS[tema.material] ?? 1 },
       uColor: { value: new THREE.Color(0x999999) },
-      uPapel: { value: new THREE.Color(tema.papel ?? '#ffffff') },
-      uTinta: { value: new THREE.Color(tema.tinta ?? '#000000') },
       uLuz: { value: luz },
       uValor: { value: 0 },
-      uResalte: { value: 0 },
-      uAlturaMax: { value: 5 },
-      uPaso: { value: 0.5 },
-      uFrec: { value: tema.frecuencia ?? 6 },
-      uRampa: { value: rampa }
+      uResalte: { value: 0 }
     };
     const malla = new THREE.Mesh(geom, new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms }));
     malla.scale.y = ALTURA_MIN;
@@ -255,8 +204,6 @@ export function crearMapa({ canvas, capaEtiquetas, geo, tema, alSeleccionar, alH
     const u = r.uniforms;
     u.uValor.value = r.valor;
     u.uColor.value.copy(r.color);
-    u.uAlturaMax.value = escala;
-    u.uPaso.value = escala / 10;
     u.uResalte.value = r.codigo === selCod ? 1 : r.codigo === hoverCod ? 0.55 : 0;
   }
 
@@ -304,8 +251,7 @@ export function crearMapa({ canvas, capaEtiquetas, geo, tema, alSeleccionar, alH
     }
     if (controls.update()) seguir = true;
     if (pick) { const p = pick; pick = null; setHover(elegir(), p); }
-    const fr = (tema.frecuencia ?? 6) * THREE.MathUtils.clamp(55 / camera.position.distanceTo(controls.target), 1, 5);
-    for (const r of regiones.values()) { r.uniforms.uFrec.value = fr; pintar(r); }
+    for (const r of regiones.values()) pintar(r);
     renderer.render(scene, camera);
     etiquetas.render(scene, camera);
     alCuadro?.();
@@ -341,7 +287,6 @@ export function crearMapa({ canvas, capaEtiquetas, geo, tema, alSeleccionar, alH
     setOrientacion(o) { orientacion = o; aplicarOrientacion(); vista('general'); },
     get orientacion() { return orientacion; },
     setSeleccion(cod) { selCod = cod; invalidar(); },
-    setTinta(hex) { for (const r of regiones.values()) r.uniforms.uTinta.value.set(hex); invalidar(); },
     get hover() { return hoverCod; }
   };
 }

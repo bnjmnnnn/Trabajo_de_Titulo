@@ -1,4 +1,4 @@
-/* Base común mínima; cada propuesta trae su propio mundo visual. */
+/* Base común mínima; el mundo visual vive en landing.css y pronostico.css. */
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
@@ -9,16 +9,4 @@ button { cursor: pointer; }
 canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .capa-etq { position: absolute; inset: 0; pointer-events: none; }
 
-.propuestas {
-  position: fixed; z-index: 40; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
-  display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 999px;
-  font: 500 12px/1 system-ui, sans-serif; background: rgba(20, 20, 22, .82); color: #ececec;
-  box-shadow: 0 6px 18px -6px rgba(0, 0, 0, .45);
-}
-.propuestas span { padding: 0 8px 0 10px; opacity: .65; }
-.propuestas a { color: inherit; text-decoration: none; padding: 7px 11px; border-radius: 999px; }
-.propuestas a:hover { background: rgba(255, 255, 255, .1); }
-.propuestas a[aria-current="page"] { background: #ececec; color: #141416; }
-.propuestas a:focus-visible { outline: 2px solid #ececec; outline-offset: 2px; }
-@media (max-width: 720px) { .propuestas { right: auto; left: 50%; transform: translateX(-50%); } .propuestas span { display: none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; } }
