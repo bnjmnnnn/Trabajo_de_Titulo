@@ -1,0 +1,9 @@
+modelo,metrica,valor
+Modelo 4 · Gradient Boosting (redistribución),RMSE 2022 (pp),0.08541184783785001
+Modelo 4 · Gradient Boosting (redistribución),RMSE 2023 (pp),0.1459169747796863
+Modelo 4 · Gradient Boosting (redistribución),Skill 2022,0.6942646393347103
+Modelo 4 · Gradient Boosting (redistribución),Skill 2023,0.647555140066157
+Conteo · Random Forest,Skill 2023,0.7438434638240876
+Conteo · Random Forest,R2 2023,0.9966209470995804
+Conteo · Random Forest,RMSE 2023 (personas),14798.99087170137
+Conteo · Random Forest,MAE 2023 (personas),7008.768949810163

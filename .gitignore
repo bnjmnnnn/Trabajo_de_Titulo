@@ -1,0 +1,6 @@
+node_modules/
+dist/
+dist-single/
+_to_delete/
+__pycache__/
+.claude/

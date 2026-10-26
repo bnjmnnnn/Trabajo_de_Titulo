@@ -1,0 +1,117 @@
+/* Propuesta 2 — Pronóstico */
+:root[data-propuesta="2"] {
+  --estudio: #0f3f93;
+  --estudio-2: #1662c4;
+  --blanco: #ffffff;
+  --tinta: #0a1f47;
+  --tv: 'Archivo', system-ui, sans-serif;
+  color-scheme: dark;
+}
+:root[data-propuesta="2"] body {
+  background: radial-gradient(120% 90% at 30% 35%, var(--estudio-2) 0%, var(--estudio) 55%, #0a2c6e 100%) fixed;
+  color: var(--blanco); font: 500 15px/1.35 var(--tv);
+}
+.tv { position: relative; min-height: 100dvh; overflow: hidden; }
+.tv-escena { position: absolute; inset: 0; }
+.guias { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.guias path { fill: none; stroke: rgba(255, 255, 255, .55); stroke-width: 1; }
+.guias circle { fill: var(--blanco); }
+
+.rotulos { list-style: none; margin: 0; padding: 0; position: absolute; inset: 0; pointer-events: none; }
+.rotulos li { position: absolute; left: 0; top: 0; }
+.rotulos button {
+  position: absolute; left: 0; top: 0; pointer-events: auto; will-change: transform;
+  display: grid; grid-template-columns: 8px 1fr auto; align-items: center; gap: 10px; width: 250px; height: 34px; padding: 0 12px 0 0;
+  border: 0; border-radius: 4px; background: var(--blanco); color: var(--tinta); text-align: left; overflow: hidden;
+  box-shadow: 0 3px 0 rgba(4, 20, 54, .35);
+  transition: background .2s, color .2s;
+}
+.rotulos button::before { content: ""; align-self: stretch; background: var(--c, #ccc); transition: background .6s; }
+.r-nom { font: 600 13px/1.35 var(--tv); font-stretch: 90%; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r-val { font: 800 calc(21px * max(var(--fs, 1), .78))/1 var(--tv); font-stretch: 75%; font-variant-numeric: tabular-nums; }
+.rotulos button:hover { background: #e9f0ff; }
+.rotulos button.activo { background: var(--tinta); color: var(--blanco); }
+.rotulos button:focus-visible, .canales button:focus-visible, .anios button:focus-visible, .tv-cargar:focus-visible, .ext-cerrar:focus-visible { outline: 3px solid #ffd34d; outline-offset: 2px; }
+
+.tv-cab { position: absolute; top: clamp(20px, 4vh, 44px); left: clamp(20px, 3vw, 48px); max-width: min(30vw, 400px); }
+.tv-cab h1 { margin: 0; display: grid; gap: 4px; }
+.tv-var { font: 700 clamp(15px, 1.25vw, 18px)/1.15 var(--tv); text-transform: uppercase; letter-spacing: .04em; opacity: .92; text-wrap: balance; }
+.tv-anio { font: 900 clamp(72px, 9vw, 132px)/.85 var(--tv); font-stretch: 70%; letter-spacing: -.02em; font-variant-numeric: lining-nums; }
+.canales { margin-top: 22px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.canales button {
+  border: 0; background: rgba(255, 255, 255, .12); color: var(--blanco); padding: 9px 14px; border-radius: 4px; min-height: 38px;
+  font: 700 13.5px/1 var(--tv); text-transform: uppercase; letter-spacing: .04em; transition: background .2s, color .2s;
+}
+.canales button:hover { background: rgba(255, 255, 255, .22); }
+.canales button[aria-checked="true"] { background: var(--blanco); color: var(--tinta); }
+.canales button:active { transform: translateY(1px); }
+
+.extendido {
+  position: absolute; left: clamp(20px, 3vw, 48px); bottom: 104px; width: min(380px, 30vw); padding: 18px 20px 18px;
+  background: var(--blanco); color: var(--tinta); border-radius: 6px; box-shadow: 0 6px 0 rgba(4, 20, 54, .35);
+  animation: entra .45s cubic-bezier(.16, 1, .3, 1);
+}
+@keyframes entra { from { opacity: 0; transform: translateY(14px); } }
+.ext-cerrar { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; border: 0; background: none; color: var(--tinta); font: 400 28px/1 var(--tv); }
+.ext-nombre { margin: 0; font: 800 22px/1.05 var(--tv); text-transform: uppercase; letter-spacing: .02em; padding-right: 32px; }
+.ext-valor { margin: 6px 0 2px; font: 900 64px/.9 var(--tv); font-stretch: 70%; font-variant-numeric: tabular-nums; }
+.ext-valor small { font-size: 26px; margin-left: 4px; font-stretch: 100%; }
+.ext-meta { margin: 6px 0 14px; font: 500 13px/1.35 var(--tv); color: #2d4370; }
+.ext-dias { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.ext-dias li { display: grid; gap: 4px; padding: 12px 8px 9px; background: #edf2fb linear-gradient(var(--c), var(--c)) top / 100% 4px no-repeat; }
+.ext-dias span { font: 700 12px/1 var(--tv); color: #2d4370; }
+.ext-dias b { font: 800 20px/1 var(--tv); font-stretch: 75%; font-variant-numeric: tabular-nums; }
+
+.zocalo {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 12px clamp(20px, 3vw, 48px) 14px;
+  background: linear-gradient(180deg, rgba(6, 22, 60, 0), rgba(6, 22, 60, .7) 40%);
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.anios { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 4px 0; margin-right: 290px; }
+.anios::-webkit-scrollbar { display: none; }
+.anios button {
+  border: 0; background: none; color: rgba(255, 255, 255, .78); padding: 8px 9px; border-radius: 4px; min-width: 44px; min-height: 40px;
+  font: 700 15px/1 var(--tv); font-stretch: 80%; font-variant-numeric: tabular-nums;
+}
+.anios button.proy { color: #ffd98a; }
+.anios button:hover { background: rgba(255, 255, 255, .12); }
+.anios button[aria-checked="true"] { background: var(--blanco); color: var(--tinta); }
+.anios .corte { margin: 0 6px 0 10px; padding-left: 12px; border-left: 1px solid rgba(255, 255, 255, .4); font: 700 11px/1 var(--tv); text-transform: uppercase; letter-spacing: .1em; color: #ffd98a; }
+.tv-nota { margin: 18px 0 0; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; font: 500 12.5px/1.2 var(--tv); color: rgba(255, 255, 255, .8); }
+.tv-cargar { border: 0; background: none; color: var(--blanco); font: 700 12.5px/1 var(--tv); text-decoration: underline; text-underline-offset: 3px; padding: 6px 0; }
+.aviso { position: fixed; z-index: 50; top: 18px; left: 50%; transform: translateX(-50%); margin: 0; padding: 10px 16px; background: var(--blanco); color: var(--tinta); border-radius: 4px; font: 600 13px var(--tv); }
+.etq-lat { display: none; }
+
+
+@media (max-width: 720px) {
+  .tv-cab { position: absolute; top: 16px; left: 16px; right: 16px; max-width: none; }
+  .tv-anio { font-size: 64px; }
+  .canales { flex-direction: row; flex-wrap: wrap; margin-top: 12px; }
+  .canales button { padding: 8px 10px; font-size: 12px; }
+  .rotulos button { width: 164px; height: 26px; gap: 6px; padding-right: 8px; grid-template-columns: 6px 1fr auto; }
+  .r-nom { font-size: 10.5px; }
+  .r-val { font-size: 16px; }
+  .extendido { left: 12px; right: 12px; width: auto; bottom: 128px; }
+  .ext-valor { font-size: 52px; }
+  .zocalo { padding: 6px 12px 62px; }
+  .anios { margin-right: 0; gap: 0 2px; }
+  .anios button { min-width: 40px; padding: 7px 5px; font-size: 14px; }
+  .anios .corte { margin: 0 4px; padding-left: 8px; }
+  .tv-nota { margin-top: 8px; }
+  .rotulos button { width: 190px; }
+  .r-nom { font-size: 10px; letter-spacing: 0; }
+}
+
+/* Llegada desde el globo */
+.tv.esperando { opacity: 0; }
+.tv.entrando { animation: tv-luz 1s cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes tv-luz { from { opacity: 0; } }
+.tv.entrando .tv-cab, .tv.entrando .zocalo { animation: tv-sube .9s .5s cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes tv-sube { from { opacity: 0; transform: translateY(14px); } }
+.tv.entrando .rotulos li button { animation: tv-rotulo .6s cubic-bezier(.16, 1, .3, 1) both; animation-delay: calc(.7s + var(--k) * 55ms); }
+@keyframes tv-rotulo { from { opacity: 0; clip-path: inset(0 100% 0 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+.tv.entrando .guias { animation: tv-luz .6s 1.6s both; }
+.tv-globo { display: inline-block; margin-top: 14px; color: rgba(255, 255, 255, .78); font: 600 12.5px/1 var(--tv); text-decoration: none; padding: 6px 0; }
+.tv-globo:hover { color: var(--blanco); text-decoration: underline; text-underline-offset: 3px; }
+.tv-globo:focus-visible { outline: 3px solid #ffd34d; outline-offset: 2px; }
+@media (max-width: 720px) { .tv-globo { display: none; } }
