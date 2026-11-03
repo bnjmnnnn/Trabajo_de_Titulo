@@ -1,5 +1,7 @@
 // datos.js — carga, validación y consultas sobre las predicciones.
 // Formato (ver README): { meta, periodos, observadoHasta, modelos:[{id,nombre,valores,metricas}], observado }
+// Cada modelo puede sobreescribir meta (variable, unidad, decimales, nota), observado, observadoHasta
+// y escala ('secuencial' | 'divergente').
 // valores[codigoRegion][iPeriodo] = [prediccion] | [prediccion, limInf, limSup] | null
 
 export const CODIGOS = [15, 1, 2, 3, 4, 5, 13, 6, 7, 16, 8, 9, 14, 10, 11, 12];
@@ -28,17 +30,23 @@ export function normalizar(raw) {
     const nombre = String(m.nombre ?? m.id ?? `Modelo ${i + 1}`);
     const valores = {};
     for (const c of CODIGOS) valores[c] = serie(m.valores?.[c] ?? m.valores?.[String(c)], nombre, c);
-    return { id: String(m.id ?? nombre), nombre, valores, metricas: m.metricas ?? null, metricasOrigen: m.metricasOrigen ?? null };
+    // Un modelo puede traer su propia unidad, registro y escala: así modelos con preguntas distintas no se mezclan.
+    return { id: String(m.id ?? nombre), nombre, valores, metricas: m.metricas ?? null, metricasOrigen: m.metricasOrigen ?? null,
+      meta: m.meta ?? null, escala: m.escala === 'divergente' ? 'divergente' : 'secuencial',
+      observado: m.observado ? observadoDe(m.observado, `${nombre} (registro)`) : null, observadoHasta: m.observadoHasta ?? null };
   });
-  const observado = {};
-  let hayObs = false;
-  for (const c of CODIGOS) {
-    const s = raw.observado?.[c] ?? raw.observado?.[String(c)];
-    observado[c] = serie(s == null ? null : s.map((v) => (v == null ? null : [v].flat()[0])), 'Observado', c);
-    if (observado[c].some(Boolean)) hayObs = true;
+  function observadoDe(o, quien) {
+    const r = {};
+    let hay = false;
+    for (const c of CODIGOS) {
+      const s = o?.[c] ?? o?.[String(c)];
+      r[c] = serie(s == null ? null : s.map((v) => (v == null ? null : [v].flat()[0])), quien, c);
+      if (r[c].some(Boolean)) hay = true;
+    }
+    return hay ? r : null;
   }
   const meta = { titulo: 'Predicciones por región', variable: 'Valor', unidad: '', decimales: 2, nota: '', ...(raw.meta ?? {}) };
-  return { meta, periodos, observadoHasta: raw.observadoHasta ?? null, modelos, observado: hayObs ? observado : null };
+  return { meta, periodos, observadoHasta: raw.observadoHasta ?? null, modelos, observado: observadoDe(raw.observado, 'Observado') };
 }
 
 /** Serie (por periodo) de una "fuente": un modelo o el observado. */

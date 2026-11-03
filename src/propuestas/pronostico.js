@@ -6,9 +6,21 @@ FIRST VIEWPORT: título a la izquierda, Chile al centro-izquierda en vertical, c
 FORM: propuesta adicional pedida por el usuario (mapa del tiempo, 2 de 7), seed e728d33b. */
 import './pronostico.css';
 import { crearMapa } from '../motor/mapa3d.js';
-import { geo, NOMBRE, OBSERVADO_ID, CODIGOS, fuentes, serieDe, datosIniciales, leerArchivos, dominio, formato, ficha, esc, mezclar, teclado } from '../motor/core.js';
+import { geo, NOMBRE, OBSERVADO_ID, CODIGOS, fuentes, vista, serieMapa, origenAnio, datosIniciales, leerArchivos, dominio, formato, ficha, esc, mezclar, teclado } from '../motor/core.js';
 
 const CALOR = ['#f7ecc2', '#f6cf7a', '#f29a45', '#e1592b', '#b52a24', '#7e1c22'];
+// Divergente (redistribución): la región que gana parte del total en calor, la que pierde en verde agua.
+const GANA = ['#f4efe4', '#f6cf7a', '#f29a45', '#e1592b', '#b52a24'];
+const PIERDE = ['#f4efe4', '#b5e3d4', '#5fbfa4', '#25907c', '#0e6158'];
+const ORIGEN = { registro: 'Registro', prueba: 'Prueba del modelo', proyeccion: 'Proyección · techo' };
+
+/** Altura (t, 0–1) y color de un valor en la escala de la vista. */
+function tono(v, dom, x) {
+  // Raíz: la RM mueve ~0,5 pp y el resto ~0,05; sin ella los cambios chicos quedarían invisibles.
+  if (v.escala === 'divergente') { const t = Math.sqrt(Math.min(1, Math.abs(x) / (dom.max || 1))); return { t, color: mezclar(x < 0 ? PIERDE : GANA, t) }; }
+  const t = (x - dom.min) / (dom.max - dom.min || 1);
+  return { t, color: mezclar(CALOR, t) };
+}
 
 export async function iniciar(raiz, { entrada = false } = {}) {
   raiz.innerHTML = `
@@ -20,6 +32,8 @@ export async function iniciar(raiz, { entrada = false } = {}) {
     <header class="tv-cab">
       <h1><span class="tv-var"></span><span class="tv-anio"></span></h1>
       <div class="canales" role="radiogroup" aria-label="Modelo"></div>
+      <p class="tv-leyenda" hidden><span><i style="--c:${GANA[3]}"></i>Gana</span><span><i style="--c:${PIERDE[3]}"></i>Pierde</span></p>
+      <p class="tv-desc"></p>
       <p class="tv-nota"><span class="tv-ej"></span><button type="button" class="tv-cargar">Cargar datos</button></p>
       <a class="tv-globo" href="./">← Volver al globo</a>
     </header>
@@ -39,6 +53,13 @@ export async function iniciar(raiz, { entrada = false } = {}) {
   const $ = (s) => raiz.querySelector(s);
   let { datos, esEjemplo } = await datosIniciales();
   const est = { fuente: datos.modelos[0].id, i: 0, sel: null };
+  const V = () => vista(datos, est.fuente);
+  // Años con dato en la vista; al cambiar de modelo, si el año no existe se va al último con predicción y registro.
+  const visibles = (v) => v.periodos.map((_, k) => k).filter((k) => origenAnio(v, k));
+  function anioInicial(v) {
+    const ks = visibles(v);
+    return ks.filter((k) => origenAnio(v, k) === 'prueba').at(-1) ?? ks.filter((k) => origenAnio(v, k) === 'registro').at(-1) ?? ks[0] ?? 0;
+  }
 
   const mapa = crearMapa({
     canvas: $('canvas'), capaEtiquetas: $('.capa-etq'), geo,
@@ -102,34 +123,41 @@ export async function iniciar(raiz, { entrada = false } = {}) {
     $('.canales').innerHTML = fuentes(datos).map((f) =>
       `<button type="button" role="radio" aria-checked="${f.id === est.fuente}" data-id="${esc(f.id)}">${esc(f.id === OBSERVADO_ID ? 'Registro' : f.nombre)}</button>`).join('');
   }
-  $('.canales').addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) { est.fuente = b.dataset.id; todo(); } });
+  $('.canales').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-id]'); if (!b || b.dataset.id === est.fuente) return;
+    est.fuente = b.dataset.id;
+    const v = V(); if (!visibles(v).includes(est.i)) est.i = anioInicial(v);
+    todo(900);
+  });
 
-  function anios() {
-    $('.anios').innerHTML = datos.periodos.map((p, k) => {
-      const proy = datos.observadoHasta != null && p > datos.observadoHasta;
-      return `<button type="button" role="radio" aria-checked="${k === est.i}" data-k="${k}" class="${proy ? 'proy' : ''}">${p}</button>`;
+  function anios(v) {
+    let antes = null;
+    $('.anios').innerHTML = visibles(v).map((k) => {
+      const o = origenAnio(v, k), marca = o !== antes && o !== 'registro' ? `<span class="corte">${o === 'proyeccion' ? 'proyección' : 'prueba'}</span>` : '';
+      antes = o;
+      return `${marca}<button type="button" role="radio" aria-checked="${k === est.i}" data-k="${k}" class="${o === 'proyeccion' ? 'proy' : o}">${v.periodos[k]}</button>`;
     }).join('');
-    const iCorte = datos.observadoHasta != null ? datos.periodos.findIndex((p) => p > datos.observadoHasta) : -1;
-    if (iCorte > 0) $('.anios').children[iCorte].insertAdjacentHTML('beforebegin', '<span class="corte">pronóstico</span>');
   }
   $('.anios').addEventListener('click', (e) => { const b = e.target.closest('[data-k]'); if (b) { est.i = Number(b.dataset.k); todo(); } });
 
   function todo(ms) {
-    const f = formato(datos), dom = dominio(datos, est.fuente);
+    const v = V(), f = formato(v), dom = dominio(v);
     const m = new Map();
     for (const c of CODIGOS) {
-      const v = serieDe(datos, est.fuente, c)[est.i];
-      const t = v ? (v.p - dom.min) / (dom.max - dom.min || 1) : null;
-      m.set(c, v ? { t, color: mezclar(CALOR, t) } : null);
+      const x = serieMapa(v, c)[est.i], k = x ? tono(v, dom, x.p) : null;
+      m.set(c, k);
       const b = rotulos.get(c);
-      b.querySelector('.r-val').textContent = v ? f(v.p, false) : '—';
-      b.style.setProperty('--c', v ? mezclar(CALOR, t) : '#9aa4b3');
+      b.querySelector('.r-val').textContent = x ? f(x.p, false) : '—';
+      b.style.setProperty('--c', k ? k.color : '#9aa4b3');
       b.classList.toggle('activo', c === est.sel);
     }
     mapa.actualizar(m, { ms });
-    canales(); anios();
-    $('.tv-var').textContent = `${datos.meta.variable}${datos.meta.unidad ? ` (${datos.meta.unidad})` : ''}`;
-    $('.tv-anio').textContent = datos.periodos[est.i];
+    canales(); anios(v);
+    $('.tv-var').textContent = `${v.meta.variable}${v.meta.unidad ? ` (${v.meta.unidad})` : ''}`;
+    $('.tv-anio').textContent = v.periodos[est.i];
+    $('.tv-anio').dataset.origen = ORIGEN[origenAnio(v, est.i)] ?? '';
+    $('.tv-desc').textContent = v.meta.nota ?? '';
+    $('.tv-leyenda').hidden = v.escala !== 'divergente';
     $('.tv-ej').textContent = esEjemplo ? 'Datos de ejemplo, no reales.' : '';
     if (est.sel) extendido();
   }
@@ -140,23 +168,24 @@ export async function iniciar(raiz, { entrada = false } = {}) {
     if (c) extendido();
   }
   function extendido() {
-    const f = formato(datos), c = est.sel, d = ficha(datos, est.fuente, c, est.i);
+    const v = V(), f = formato(v), c = est.sel, d = ficha(v, c, est.i);
     $('.ext-nombre').textContent = NOMBRE[c];
-    $('.ext-valor').innerHTML = d.valor == null ? 'Sin dato' : `${esc(f(d.valor, false))}<small>${esc(datos.meta.unidad ?? '')}</small>`;
-    $('.ext-meta').textContent = [d.proyeccion ? 'Pronóstico' : 'Año con registro', d.observado != null ? `registro ${f(d.observado)}` : null,
+    $('.ext-valor').innerHTML = d.valor == null ? 'Sin dato' : `${esc(f(d.valor, false))}<small>${esc(v.meta.unidad ?? '')}</small>`;
+    $('.ext-meta').textContent = [ORIGEN[d.origen], d.observado != null ? `registro ${f(d.observado)}` : null,
+      d.observado != null ? `error ${f(d.valor - d.observado)}` : null,
       d.lo != null ? `rango ${f(d.lo, false)}–${f(d.hi, false)}` : null, d.valor != null ? `${d.puesto}.º de ${d.total}` : null].filter(Boolean).join(' · ');
-    const s = serieDe(datos, est.fuente, c);
-    const sig = [1, 2, 3, 4].map((k) => est.i + k).filter((k) => k < datos.periodos.length);
-    const lista = sig.length ? sig : [est.i - 3, est.i - 2, est.i - 1].filter((k) => k >= 0);
-    const dom = dominio(datos, est.fuente);
+    const s = serieMapa(v, c), ks = visibles(v), j = ks.indexOf(est.i);
+    const sig = ks.slice(j + 1, j + 5);
+    const lista = sig.length ? sig : ks.slice(Math.max(0, j - 3), j);
+    const dom = dominio(v);
     $('.ext-dias').innerHTML = lista.map((k) => {
-      const v = s[k]; const t = v ? (v.p - dom.min) / (dom.max - dom.min || 1) : 0;
-      return `<li style="--c:${mezclar(CALOR, t)}"><span>${datos.periodos[k]}</span><b>${v ? esc(f(v.p, false)) : '—'}</b></li>`;
+      const x = s[k];
+      return `<li style="--c:${x ? tono(v, dom, x.p).color : '#9aa4b3'}"><span>${v.periodos[k]}</span><b>${x ? esc(f(x.p, false)) : '—'}</b></li>`;
     }).join('');
   }
   $('.ext-cerrar').addEventListener('click', () => seleccionar(null));
 
-  const mover = (dx) => { const n = Math.min(datos.periodos.length - 1, Math.max(0, est.i + dx)); if (n !== est.i) { est.i = n; todo(); } };
+  const mover = (dx) => { const ks = visibles(V()), n = ks[ks.indexOf(est.i) + dx]; if (n != null) { est.i = n; todo(); } };
   teclado({ anterior: () => mover(-1), siguiente: () => mover(1), cerrar: () => est.sel && seleccionar(null) });
 
   $('.tv-cargar').addEventListener('click', () => $('.tv-archivo').click());
@@ -169,8 +198,7 @@ export async function iniciar(raiz, { entrada = false } = {}) {
 
   function arrancar() {
     est.fuente = datos.modelos[0].id;
-    const iObs = datos.observadoHasta != null ? datos.periodos.indexOf(datos.observadoHasta) : -1;
-    est.i = iObs >= 0 ? iObs : 0;
+    est.i = anioInicial(V());
     seleccionar(null); todo(900);
   }
   addEventListener('resize', () => { margen(); mapa.vista('general', 0); });
@@ -180,8 +208,7 @@ export async function iniciar(raiz, { entrada = false } = {}) {
   const tv = raiz.querySelector('.tv');
   tv.classList.add('esperando');
   est.fuente = datos.modelos[0].id;
-  const iObs = datos.observadoHasta != null ? datos.periodos.indexOf(datos.observadoHasta) : -1;
-  est.i = iObs >= 0 ? iObs : 0;
+  est.i = anioInicial(V());
   margen(); mapa.vista('general', 0);
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   return {
@@ -189,10 +216,10 @@ export async function iniciar(raiz, { entrada = false } = {}) {
     llegada() {
       const caja = $('.tv-escena').getBoundingClientRect();
       const n = mapa.enPantalla(15), sur = mapa.enPantalla(12), rm = mapa.enPantalla(13);
-      const dom = dominio(datos, est.fuente);
+      const v = V(), dom = dominio(v);
       const colores = new Map(CODIGOS.map((c) => {
-        const v = serieDe(datos, est.fuente, c)[est.i];
-        return [c, v ? mezclar(CALOR, (v.p - dom.min) / (dom.max - dom.min || 1)) : '#9aa4b3'];
+        const x = serieMapa(v, c)[est.i];
+        return [c, x ? tono(v, dom, x.p).color : '#9aa4b3'];
       }));
       return { cx: caja.left + rm.x, cy: caja.top + (n.y + sur.y) / 2, altoChile: (sur.y - n.y) * 1.08, colores };
     },

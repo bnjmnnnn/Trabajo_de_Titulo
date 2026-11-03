@@ -45,6 +45,11 @@
 .canales button:hover { background: rgba(255, 255, 255, .22); }
 .canales button[aria-checked="true"] { background: var(--blanco); color: var(--tinta); }
 .canales button:active { transform: translateY(1px); }
+.tv-anio[data-origen]:not([data-origen=""])::after { content: attr(data-origen); display: block; margin-top: 10px; font: 700 12px/1 var(--tv); font-stretch: 100%; letter-spacing: .1em; text-transform: uppercase; color: #ffd98a; }
+.tv-desc { margin: 14px 0 0; font: 500 13px/1.4 var(--tv); color: rgba(255, 255, 255, .86); text-wrap: pretty; }
+.tv-leyenda { margin: 10px 0 0; display: flex; gap: 14px; font: 700 12px/1 var(--tv); text-transform: uppercase; letter-spacing: .06em; }
+.tv-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.tv-leyenda i { width: 22px; height: 10px; border-radius: 2px; background: var(--c); }
 
 .extendido {
   position: absolute; left: clamp(20px, 3vw, 48px); bottom: 104px; width: min(380px, 30vw); padding: 18px 20px 18px;
@@ -98,6 +103,8 @@
   .anios button { min-width: 40px; padding: 7px 5px; font-size: 14px; }
   .anios .corte { margin: 0 4px; padding-left: 8px; }
   .tv-nota { margin-top: 8px; }
+  .tv-desc { display: none; }
+  .tv-anio[data-origen]:not([data-origen=""])::after { margin-top: 6px; font-size: 10.5px; }
   .rotulos button { width: 190px; }
   .r-nom { font-size: 10px; letter-spacing: 0; }
 }
