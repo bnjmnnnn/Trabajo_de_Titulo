@@ -2,29 +2,37 @@
 
 Los dos modelos de TT1 que alimentan el mapa, con sus scripts, el modelo entrenado (`.pkl`) y sus salidas.
 Los archivos son copias sin cambios de [bnjmnnnn/TT1](https://github.com/bnjmnnnn/TT1)
-(rama `reevaluacion-de-modelos`); el único script nuevo es `modelo_4_gradient_boosting/predecir_gb.py`.
+(rama `reevaluacion-de-modelos`). Lo nuevo es `modelo_4_gradient_boosting/predecir_gb.py`, que arma el Modelo 4
+con 5 variables tras la ronda 3 (ver más abajo).
 
 El criterio de selección es el **skill score de Murphy (1988)** contra la persistencia (repetir el año
 anterior): `skill = 1 − MSE_modelo / MSE_persistencia`. Positivo, el modelo le gana a no hacer nada.
 
 | Rol | Modelo | Skill | Carpeta |
 | :-- | :-- | :-: | :-- |
-| Reparto territorial | **Modelo 4 · Gradient Boosting** sobre la redistribución | +0,648 (test 2023) · +0,694 (test 2022) | `modelo_4_gradient_boosting/` |
+| Reparto territorial | **Modelo 4 · Gradient Boosting** sobre la redistribución, 5 variables | +0,671 (test 2023) · +0,683 (test 2022) | `modelo_4_gradient_boosting/` |
 | Cantidad de personas | **Random Forest de conteo** (modo crecimiento) | +0,744 (test 2023) | `conteo_random_forest/` |
 
 ## Modelo 4 · Gradient Boosting (`modelo_4_gradient_boosting/`)
 Predice la **redistribución**: `rate(r, t) − rate(r, t−1)`, el cambio en la participación de cada región
 en el total nacional. `GradientBoostingRegressor(n_estimators=200, learning_rate=0.05, max_depth=2,
-min_samples_leaf=2, random_state=42)` con las 6 variables `seleccionadas`: `sol_otorgadas_lag1`,
-`sol_share_lag1`, `sol_total_lag1`, `pct_peru_lag1`, `mean_age_lag1`, `rate_lag2`.
+min_samples_leaf=2, random_state=42)` con 5 variables: `sol_otorgadas_lag1`, `sol_share_lag1`,
+`sol_total_lag1`, `mean_age_lag1`, `rate_lag2`.
+
+**Por qué 5 y no las 6 `seleccionadas` de TT1.** La ronda 3 (`reporte_ronda3.md`, código en
+`TT1/src/modelo_4_ronda3/`) probó con un criterio fijado de antemano qué variables sobran y 7 variables nuevas.
+Quitar `pct_peru_lag1` empata el skill (+0,683 / +0,671, antes +0,694 / +0,648), mejora el Monte Carlo de regiones
+y fue el único cambio que cumplió el criterio. Ninguna variable nueva lo cumplió.
 
 | Archivo | Qué es |
 | :-- | :-- |
 | `train_modelo4.py` | Entrena y compara los 4 algoritmos; el gradient boosting es el elegido |
 | `explorar_variables.py`, `probar_ronda2.py` | Arman el panel y las variables derivadas que usa `train_modelo4.py` |
-| `redistribucion_gradient_boosting.pkl` | El modelo entrenado con 2021-2022 (test 2023) |
-| `metricas_modelo4.csv` | Métricas de todos los algoritmos, conjuntos y años de prueba |
-| `predecir_gb.py` | Tabla por región con el gradient boosting y chequeo de que el skill coincide |
+| `redistribucion_gradient_boosting_5var.pkl` | El modelo de 5 variables entrenado con 2021-2022 (test 2023) |
+| `metricas_modelo4.csv` | Métricas de TT1: todos los algoritmos, conjuntos y años de prueba (con 6 variables) |
+| `metricas_gb_5var.csv` | Skill, RMSE, p de permutación y Monte Carlo del modelo de 5 variables |
+| `reporte_ronda3.md` | Ablación y variables nuevas: qué se probó, con qué criterio y qué resultó |
+| `predecir_gb.py` | Entrena el modelo de 5 variables por corte, comprueba el skill de la ronda 3 y arma la tabla por región |
 | `predicciones_gb.csv` | Predicciones por región, test 2022 y 2023 (las que muestra el mapa) |
 
 Ojo: `train_modelo4.py` escribe su tabla por región (`predicciones_redistribucion_2023.csv`) con el

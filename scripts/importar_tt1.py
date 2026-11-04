@@ -6,8 +6,9 @@ Modelos (ver TT1/docs/plan_avance_tt2.md, §6 "Decisiones tomadas"):
     2021-2023, es un techo). Registro: personas estimadas 2021-2023.
   - Modelo 4 · Gradient Boosting: estima la REDISTRIBUCIÓN, el cambio en la participación de cada
     región en el total nacional, rate(t) − rate(t−1), en puntos porcentuales. El único que le gana a
-    la persistencia en el reparto territorial según el skill de Murphy (1988). Prueba 2022 y 2023
-    (modelos/modelo_4_gradient_boosting/predicciones_gb.csv, generadas con predecir_gb.py).
+    la persistencia en el reparto territorial según el skill de Murphy (1988). Con 5 variables (sin
+    pct_peru_lag1, ver la ronda 3). Prueba 2022 y 2023 (modelos/modelo_4_gradient_boosting/
+    predicciones_gb.csv y metricas_gb_5var.csv, generadas con predecir_gb.py).
     Registro: redistribución observada 2021-2023.
 
 Los modelos responden preguntas distintas, así que no se mezclan: cada uno es una vista del mapa con
@@ -73,10 +74,9 @@ def main():
     for r in leer(m4 / "predicciones_gb.csv"):  # el registro del panel calza con el que vio el modelo
         assert abs(100 * float(r["redistribucion"]) - obs_m4[(ine(r), int(r["ANIO"]))]) < 1e-3, r["REGION"]
     met = {}
-    for r in leer(m4 / "metricas_modelo4.csv"):
-        if r["pregunta"] == "redistribucion" and r["conjunto"] == "seleccionadas" and r["modelo"] == "gradient_boosting":
-            met[f"Skill {r['anio_test']}"] = float(r["skill"])
-            met[f"RMSE {r['anio_test']} (pp)"] = 100 * float(r["rmse"])
+    for r in leer(m4 / "metricas_gb_5var.csv"):
+        met[f"Skill {r['anio_test']}"] = float(r["skill"])
+        met[f"RMSE {r['anio_test']} (pp)"] = 100 * float(r["rmse"])
 
     coma = lambda x, d=3: f"{x:+.{d}f}".replace(".", ",")
     puntos = lambda x: f"{x:,.0f}".replace(",", ".")
