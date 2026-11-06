@@ -24,11 +24,12 @@ function servirModelos() {
 
 export default defineConfig(({ mode }) => ({
   base: './',
-  plugins: mode === 'single' ? [viteSingleFile()] : [servirModelos()],
+  // La portada lee los CSV de modelos/ al cargar, así que ambos builds los copian.
+  plugins: mode === 'single' ? [viteSingleFile(), servirModelos()] : [servirModelos()],
   build: {
     outDir: mode === 'single' ? 'dist-single' : 'dist', chunkSizeWarningLimit: 1200,
-    // El modo de un solo archivo sigue siendo solo el globo; el build normal publica también las otras páginas.
-    rollupOptions: mode === 'single' ? {} : { input: { main: 'index.html', pliego: 'pliego.html', resultados: 'resultados.html' } }
+    // El modo de un solo archivo publica solo la portada (index.html); el build normal publica también las otras páginas.
+    rollupOptions: mode === 'single' ? {} : { input: { main: 'index.html', pliego: 'pliego.html', globo: 'globo.html', vuelo: 'vuelo.html' } }
   },
   server: { host: '127.0.0.1', port: 5173 }
 }));

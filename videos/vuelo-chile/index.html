@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Vuelo por Chile</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="data.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #fafaf9; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; }
+      #vuelo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    </style>
+  </head>
+  <body>
+    <!--
+      Vuelo continuo de norte a sur sobre Chile en 3D. Seis zonas; cada una tiene una "inmersión"
+      (DIVE s) y entre zonas un "conector" (CONN s). Los cortes para scroll-world se hacen después
+      con ffmpeg en los límites exactos de ZONAS[i].t0 / t1, así las uniones calzan cuadro a cuadro.
+    -->
+    <div data-hf-id="hf-jo01" id="root" data-composition-id="main" data-start="0" data-duration="39.5" data-width="1920" data-height="1080">
+      <canvas data-hf-id="hf-l96n" id="vuelo" class="clip" data-start="0" data-duration="39.5" data-track-index="0"></canvas>
+    </div>
+
+    <script>
+      // Timeline raíz (el movimiento lo maneja la escena Three.js a partir del tiempo de HyperFrames).
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+
+    <script type="module">
+      import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/+esm";
+
+      const W = 1920, H = 1080;
+      const DIVE = 4.5, CONN = 2.5;
+      const RAMPA = ["#e6f4f1", "#a7dccf", "#4db3a2", "#0f766e", "#0b4a45"];
+      const BASE = new THREE.Color("#e7e5e4");
+
+      // Proyección igual a mapa3d.js: x = (lon + 71)·cos(36°), y = lat + 36
+      const KX = Math.cos((-36 * Math.PI) / 180);
+      const P = (lon, lat) => [(lon + 71) * KX, lat + 36];
+
+      // Seis zonas de norte a sur: centro (lon, lat), regiones (código INE) y escala del encuadre
+      const ZONAS = [
+        { nombre: "norte-grande", c: P(-69.6, -21.5), reg: [15, 1, 2], s: 1.35 },
+        { nombre: "norte-chico", c: P(-70.6, -29.2), reg: [3, 4], s: 1.0 },
+        { nombre: "santiago", c: P(-70.9, -33.5), reg: [13, 5], s: 0.95 },
+        { nombre: "centro-sur", c: P(-72.0, -36.6), reg: [6, 7, 16, 8], s: 1.0 },
+        { nombre: "sur", c: P(-72.7, -40.8), reg: [9, 14, 10], s: 1.2 },
+        { nombre: "austral", c: P(-72.6, -49.5), reg: [11, 12], s: 1.75 },
+      ];
+      ZONAS.forEach((z, i) => { z.t0 = i * (DIVE + CONN); z.t1 = z.t0 + DIVE; });
+      window.__ZONAS = ZONAS.map((z) => ({ nombre: z.nombre, t0: z.t0, t1: z.t1 }));
+
+      // ---------- Escena ----------
+      const canvas = document.getElementById("vuelo");
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setSize(W, H, false);
+      renderer.setPixelRatio(1);
+      renderer.setClearColor("#fafaf9");
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.Fog("#fafaf9", 26, 70);
+      const camera = new THREE.PerspectiveCamera(30, W / H, 0.5, 400);
+
+      scene.add(new THREE.HemisphereLight("#ffffff", "#d6d3d1", 2.4));
+      const sol = new THREE.DirectionalLight("#ffffff", 0.9);
+      sol.position.set(-8, 14, -6);
+      scene.add(sol);
+
+      const suelo = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({ color: "#f3f2ef" }));
+      suelo.rotation.x = -Math.PI / 2;
+      suelo.position.y = -0.02;
+      scene.add(suelo);
+
+      // Paralelos cada 2,5° como referencia de lectura
+      const retMat = new THREE.LineBasicMaterial({ color: "#d6d3d1", transparent: true, opacity: 0.7 });
+      for (let lat = -17.5; lat >= -56; lat -= 2.5) {
+        const a = P(-80, lat), b = P(-62, lat);
+        scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(a[0], 0, -a[1]), new THREE.Vector3(b[0], 0, -b[1])]), retMat));
+      }
+
+      // Altura y color: escala logarítmica del valor 2023 (la RM es ~240 veces Aysén)
+      const vals = CHILE.regiones.map((r) => r.v);
+      const lmin = Math.log(Math.min(...vals)), lmax = Math.log(Math.max(...vals));
+      const tDe = (v) => (Math.log(v) - lmin) / (lmax - lmin);
+      const rampa = (t) => {
+        const x = Math.min(0.999, Math.max(0, t)) * (RAMPA.length - 1), i = Math.floor(x);
+        return new THREE.Color(RAMPA[i]).lerp(new THREE.Color(RAMPA[i + 1]), x - i);
+      };
+
+      const bordeMat = new THREE.LineBasicMaterial({ color: "#1c1917", transparent: true, opacity: 0.35 });
+      const regiones = new Map();
+      for (const r of CHILE.regiones) {
+        const formas = r.poligonos.map(([ext, ...huecos]) => {
+          const s = new THREE.Shape(ext.map(([x, y]) => new THREE.Vector2(x, y)));
+          s.holes = huecos.map((h) => new THREE.Path(h.map(([x, y]) => new THREE.Vector2(x, y))));
+          return s;
+        });
+        const geom = new THREE.ExtrudeGeometry(formas, { depth: 1, bevelEnabled: false, curveSegments: 1 });
+        geom.rotateX(-Math.PI / 2);
+        const mat = new THREE.MeshLambertMaterial({ color: BASE.clone() });
+        const malla = new THREE.Mesh(geom, mat);
+        for (const pol of r.poligonos) {
+          const pts = pol[0].map(([x, y]) => new THREE.Vector3(x, 1.002, -y));
+          malla.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), bordeMat));
+        }
+        scene.add(malla);
+        const t = tDe(r.v);
+        const zona = ZONAS.findIndex((z) => z.reg.includes(r.c));
+        // t^1.6 separa más la RM del resto sin que las regiones chicas queden planas
+        regiones.set(r.c, { malla, mat, t, alto: 0.1 + Math.pow(t, 1.6) * 2.4, color: rampa(0.12 + t * 0.88), sube: ZONAS[zona].t0 + 1.2 });
+      }
+
+      // ---------- Cámara ----------
+      const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+      const blanco = (z) => v3(z.c[0], 0.6, -z.c[1]);
+      // Todo se mira desde el Pacífico (oeste): el norte queda a la izquierda y el vuelo avanza a la derecha.
+      // Lejos: alto y algo al norte de la zona. Cerca: bajo, frente a la zona.
+      const lejos = (z) => blanco(z).add(v3(-15 * z.s, 13 * z.s, -5 * z.s));
+      const cerca = (z) => blanco(z).add(v3(-11 * z.s, 6 * z.s, -1.5 * z.s));
+      // Punto de mira corrido al norte: la zona queda en el tercio derecho, libre del texto de la página
+      const mirar = (z) => blanco(z).add(v3(0, 0, -1.8 * z.s));
+      const general = { pos: v3(-34, 34, 1), mira: v3(1, 0, 1) };
+
+      const suave = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+      const lerp3 = (a, b, k) => a.clone().lerp(b, k);
+      function camaraEn(t) {
+        for (let i = 0; i < ZONAS.length; i++) {
+          const z = ZONAS[i];
+          if (t <= z.t1) {
+            // Inmersión: la primera parte desde la vista de todo Chile; las demás desde "lejos".
+            const k = suave(Math.max(0, (t - z.t0) / DIVE));
+            const de = i === 0 ? general : { pos: lejos(z), mira: mirar(z) };
+            return { pos: lerp3(de.pos, cerca(z), k), mira: lerp3(de.mira, mirar(z), k) };
+          }
+          const sig = ZONAS[i + 1];
+          if (sig && t < sig.t0) {
+            const k = suave((t - z.t1) / CONN);
+            // Conector: sube y avanza hacia el sur con un arco suave
+            const pos = lerp3(cerca(z), lejos(sig), k);
+            pos.y += Math.sin(k * Math.PI) * 3;
+            return { pos, mira: lerp3(mirar(z), mirar(sig), k) };
+          }
+        }
+        const z = ZONAS.at(-1);
+        return { pos: cerca(z), mira: mirar(z) };
+      }
+
+      // ---------- Render en el tiempo exacto ----------
+      function renderAt(time) {
+        for (const r of regiones.values()) {
+          const k = suave(Math.min(1, Math.max(0, (time - r.sube) / 1.6)));
+          r.malla.scale.y = 0.06 + (r.alto - 0.06) * k;
+          r.mat.color.copy(BASE).lerp(r.color, k);
+        }
+        const c = camaraEn(time);
+        camera.position.copy(c.pos);
+        camera.lookAt(c.mira);
+        // La niebla sigue la distancia de cámara: borra el fondo lejano sin tapar el plano general
+        const d = c.pos.distanceTo(c.mira);
+        scene.fog.near = d * 1.1; scene.fog.far = d * 3;
+        renderer.render(scene, camera);
+      }
+      window.addEventListener("hf-seek", (e) => renderAt(e.detail.time));
+      renderAt(window.__hfThreeTime || 0);
+    </script>
+  </body>
+</html>

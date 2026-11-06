@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Recorrido por Chile · Población inmigrante por región</title>
+  <meta name="description" content="Un vuelo de norte a sur por Chile: cada región se eleva según su población inmigrante registrada en 2023. Al final, explora las predicciones de los modelos." />
+  <meta property="og:title" content="Recorrido por Chile · Población inmigrante por región" />
+  <meta property="og:description" content="De Arica a Magallanes, seis zonas con los datos del modelo de conteo." />
+  <meta name="theme-color" content="#f5f4f1" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f766e'/%3E%3Cpath d='M14 6h4v4h-2v6h3v4h-3v6h-2z' fill='%23fff'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* Tema del motor scroll-world con la paleta de la landing (fondo igual al del video). */
+    #world.sw-root {
+      --sw-bg: #f5f4f1; --sw-ink: #1c1917; --sw-ink-soft: #57534e; --sw-accent: #0f766e;
+      --sw-font-display: 'Geist', ui-sans-serif, system-ui, sans-serif;
+      --sw-font-body: 'Geist', ui-sans-serif, system-ui, sans-serif;
+    }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .volver {
+      position: fixed; z-index: 70; top: 16px; left: 50%; transform: translateX(-50%);
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px;
+      background: rgba(255, 255, 255, .72); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid #e7e5e4; color: #1c1917; font: 500 14px/20px 'Geist', system-ui, sans-serif; text-decoration: none;
+      transition: background-color .3s cubic-bezier(.22, 1, .36, 1);
+    }
+    .volver:hover { background: #fff; }
+    .volver:focus-visible { outline: 2px solid #0f766e; outline-offset: 2px; }
+    .estado { position: fixed; z-index: 70; left: 50%; bottom: 72px; transform: translateX(-50%); margin: 0; padding: 12px 16px; border-radius: 8px; border: 1px solid #c2410c; background: #fde3d3; color: #c2410c; font: 500 14px/20px 'Geist', system-ui, sans-serif; }
+    .sw-copy__body, .sw-copy__tags li { font-variant-numeric: tabular-nums; }
+    /* Las partículas del motor se ven como polvo sobre el fondo claro: fuera */
+    #world .sw-particles { display: none; }
+  </style>
+</head>
+<body>
+  <h1 class="sr">Modelos de predicción de conteo y distribución de inmigrantes: recorrido por Chile</h1>
+  <a class="volver" href="./">Ir a los resultados</a>
+  <div id="world" aria-label="Recorrido de norte a sur"></div>
+  <p class="estado" hidden role="alert"></p>
+  <script type="module" src="/src/vuelo/main.js"></script>
+</body>
+</html>

@@ -33,6 +33,8 @@ y fue el único cambio que cumplió el criterio. Ninguna variable nueva lo cumpl
 | `metricas_gb_5var.csv` | Skill, RMSE, p de permutación y Monte Carlo del modelo de 5 variables |
 | `reporte_ronda3.md` | Ablación y variables nuevas: qué se probó, con qué criterio y qué resultó |
 | `predecir_gb.py` | Entrena el modelo de 5 variables por corte, comprueba el skill de la ronda 3 y arma la tabla por región |
+| `proyectar_gb_2024_2028.py` | Reentrena con 2021-2023 y proyecta 2024-2028 de forma recursiva, con las condiciones promedio 2021-2023 (mismo supuesto que el conteo) |
+| `proyeccion_gb_2024_2028.csv` | Redistribución y participación proyectadas por región. Es un escenario: el modelo solo se validó a un año |
 | `predicciones_gb.csv` | Predicciones por región, test 2022 y 2023 (las que muestra el mapa) |
 
 Ojo: `train_modelo4.py` escribe su tabla por región (`predicciones_redistribucion_2023.csv`) con el

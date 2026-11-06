@@ -3,3 +3,5 @@ dist/
 _to_delete/
 __pycache__/
 .claude/
+videos/*/renders/
+videos/*/.hyperframes/

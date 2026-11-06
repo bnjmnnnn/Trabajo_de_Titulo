@@ -9,9 +9,15 @@ const RUTAS = {
   conteoProy: 'modelos/conteo_random_forest/proyeccion_modelo_2024_2028.csv',
   conteoMet: 'modelos/conteo_random_forest/metricas_conteo_crecimiento.csv',
   gbPred: 'modelos/modelo_4_gradient_boosting/predicciones_gb.csv',
-  gbMet: 'modelos/modelo_4_gradient_boosting/metricas_modelo4.csv'
+  gbMet: 'modelos/modelo_4_gradient_boosting/metricas_modelo4.csv',
+  gb5: 'modelos/modelo_4_gradient_boosting/metricas_gb_5var.csv',
+  gbProy: 'modelos/modelo_4_gradient_boosting/proyeccion_gb_2024_2028.csv'
 };
 export const ARCHIVOS = RUTAS;
+
+// Copia de respaldo de los mismos CSV, empaquetada al compilar. Solo se usa si la página no puede
+// pedir los archivos (por ejemplo, el build de un solo archivo abierto sin servidor).
+const RESPALDO = import.meta.glob('/modelos/*/*.csv', { query: '?raw', import: 'default', eager: true });
 
 function csv(texto) {
   const [cab, ...filas] = texto.trim().split(/\r?\n/);
@@ -19,9 +25,14 @@ function csv(texto) {
   return filas.filter(Boolean).map((f) => Object.fromEntries(f.split(',').map((v, i) => [cols[i], v])));
 }
 async function leer(ruta) {
-  const r = await fetch(new URL(ruta, document.baseURI), { cache: 'no-store' });
-  if (!r.ok) throw new Error(`no se encontró ${ruta} (HTTP ${r.status})`);
-  return csv(await r.text());
+  try {
+    const r = await fetch(new URL(ruta, document.baseURI), { cache: 'no-store' });
+    if (r.ok) return csv(await r.text());
+    if (!RESPALDO[`/${ruta}`]) throw new Error(`no se encontró ${ruta} (HTTP ${r.status})`);
+  } catch (e) {
+    if (!RESPALDO[`/${ruta}`]) throw e;
+  }
+  return csv(RESPALDO[`/${ruta}`]);
 }
 const ine = (f) => CODREGEO_A_INE[Number(f.CODREGEO)];
 
@@ -30,7 +41,7 @@ const ine = (f) => CODREGEO_A_INE[Number(f.CODREGEO)];
  * { id, nombre, unidad, escala, anios: [{anio, origen, valores: Map(ine → {v, obs?})}], skill: {anio: s} }
  */
 export async function cargarModelos() {
-  const [cp, cy, cm, gp, gm] = await Promise.all(Object.values(RUTAS).map(leer));
+  const [cp, cy, cm, gp, gm, g5, gy] = await Promise.all(Object.values(RUTAS).map(leer));
 
   // ---- Conteo · Random Forest (personas) ----
   const registro2022 = new Map(cp.map((f) => [ine(f), { v: Number(f.estimation_lag1) }]));
@@ -43,7 +54,7 @@ export async function cargarModelos() {
   const conteo = {
     id: 'conteo', nombre: 'Conteo', algoritmo: 'Random Forest',
     pregunta: '¿Cuántas personas inmigrantes hay en cada región?',
-    unidad: 'personas', decimales: 0, escala: 'secuencial',
+    unidad: 'personas', decimales: 0, escala: 'secuencial', etiquetaProy: 'Proyección (techo)',
     anios: [
       { anio: 2022, origen: 'registro', valores: registro2022 },
       { anio: 2023, origen: 'prueba', valores: prueba2023 },
@@ -56,21 +67,29 @@ export async function cargarModelos() {
   // ---- Redistribución · Gradient Boosting (puntos porcentuales de participación) ----
   const gbAnios = {};
   for (const f of gp) (gbAnios[f.ANIO] ??= new Map()).set(ine(f), { v: 100 * Number(f.predicho), obs: 100 * Number(f.redistribucion) });
+  // Proyección 2024-2028 (proyectar_gb_2024_2028.py): mismas condiciones promedio 2021-2023 que el conteo.
+  const gbProy = {};
+  for (const f of gy) (gbProy[f.ANIO] ??= new Map()).set(ine(f), { v: 100 * Number(f.redistribucion_proyectada) });
+  // Modelo en uso: Gradient Boosting con 5 variables (ronda 3, sin pct_peru_lag1)
   const skillGb = {}, rmseGb = {};
-  for (const f of gm) if (f.pregunta === 'redistribucion' && f.conjunto === 'seleccionadas' && f.modelo === 'gradient_boosting') {
-    skillGb[f.anio_test] = Number(f.skill); rmseGb[f.anio_test] = 100 * Number(f.rmse);
-  }
+  for (const f of g5) { skillGb[f.anio_test] = Number(f.skill); rmseGb[f.anio_test] = 100 * Number(f.rmse); }
   const distribucion = {
     id: 'distribucion', nombre: 'Distribución', algoritmo: 'Gradient Boosting',
     pregunta: '¿Qué regiones ganan o pierden parte del total nacional?',
-    unidad: 'pp', decimales: 2, escala: 'divergente',
-    anios: Object.keys(gbAnios).sort().map((a) => ({ anio: Number(a), origen: 'prueba', valores: gbAnios[a] })),
+    unidad: 'pp', decimales: 2, escala: 'divergente', etiquetaProy: 'Proyección (escenario)',
+    anios: [
+      ...Object.keys(gbAnios).sort().map((a) => ({ anio: Number(a), origen: 'prueba', valores: gbAnios[a] })),
+      ...Object.keys(gbProy).sort().map((a) => ({ anio: Number(a), origen: 'proyeccion', valores: gbProy[a] }))
+    ],
     skill: skillGb, rmse: rmseGb
   };
 
   // Comparación de algoritmos (para la sección de evidencia)
+  // Algoritmos comparados con las 6 variables de TT1, más el modelo final de 5 variables
   const compGb = gm.filter((f) => f.pregunta === 'redistribucion' && f.conjunto === 'seleccionadas' && f.anio_test === '2023')
-    .map((f) => ({ modelo: f.modelo, skill: Number(f.skill) }));
+    .map((f) => ({ modelo: f.modelo === 'gradient_boosting' ? 'gradient_boosting_6' : f.modelo, skill: Number(f.skill) }));
+  const final23 = g5.find((f) => f.anio_test === '2023');
+  if (final23) compGb.push({ modelo: 'gradient_boosting_5', skill: Number(final23.skill) });
   const pers = gm.find((f) => f.pregunta === 'redistribucion' && f.anio_test === '2023' && f.modelo === '-');
   const compConteo = cm.filter((f) => f.split === 'test').map((f) => ({ modelo: f.modelo.replace('_conteo', ''), skill: 1 - Number(f.rmse) ** 2 / msePers }));
 

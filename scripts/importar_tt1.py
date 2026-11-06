@@ -70,7 +70,9 @@ def main():
     # --- Modelo 4: redistribución en puntos porcentuales ---
     obs_m4 = {(ine(r), int(r["ANIO"])): round(100 * (float(r["rate"]) - float(r["rate_lag1"])), 4) for r in panel}
     pred_m4 = {(ine(r), int(r["ANIO"])): round(100 * float(r["predicho"]), 4) for r in leer(m4 / "predicciones_gb.csv")}
-    completo(obs_m4, [2021, 2022, 2023], "registro redistribución"); completo(pred_m4, [2022, 2023], "Modelo 4")
+    pred_m4 |= {(ine(r), int(r["ANIO"])): round(100 * float(r["redistribucion_proyectada"]), 4)
+                for r in leer(m4 / "proyeccion_gb_2024_2028.csv")}
+    completo(obs_m4, [2021, 2022, 2023], "registro redistribución"); completo(pred_m4, range(2022, 2029), "Modelo 4")
     for r in leer(m4 / "predicciones_gb.csv"):  # el registro del panel calza con el que vio el modelo
         assert abs(100 * float(r["redistribucion"]) - obs_m4[(ine(r), int(r["ANIO"]))]) < 1e-3, r["REGION"]
     met = {}
@@ -94,7 +96,8 @@ def main():
          "meta": {"variable": "Cambio en la participación del total nacional", "unidad": "pp", "decimales": 2,
                   "nota": f"Cuánto gana o pierde cada región en su parte del total de inmigrantes respecto del año "
                           f"anterior, en puntos porcentuales. Prueba 2022 y 2023 con skill {coma(met['Skill 2022'])} "
-                          f"y {coma(met['Skill 2023'])} contra la persistencia. El modelo no proyecta después de 2023."},
+                          f"y {coma(met['Skill 2023'])} contra la persistencia. 2024-2028 es un escenario con las "
+                          f"condiciones promedio 2021-2023, como el conteo: no está validado más allá de un año."},
          "escala": "divergente", "observadoHasta": OBSERVADO_HASTA,
          "valores": serie(pred_m4, lambda v: [v]), "observado": serie(obs_m4, lambda v: v),
          "metricas": met, "metricasOrigen": "entregadas"},

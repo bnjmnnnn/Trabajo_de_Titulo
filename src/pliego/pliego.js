@@ -60,7 +60,7 @@ export async function montar(raiz) {
         <p class="nota"></p>
         <div class="acciones">
           <button type="button" class="cargar">Cargar otros datos</button>
-          <a href="./">Ver la propuesta del globo</a>
+          <a href="./globo.html">Ver la propuesta del globo</a>
         </div>
       </div>
       <div class="leyenda">

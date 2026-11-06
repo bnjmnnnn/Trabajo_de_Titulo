@@ -12,7 +12,7 @@ const CALOR = ['#f7ecc2', '#f6cf7a', '#f29a45', '#e1592b', '#b52a24', '#7e1c22']
 // Divergente (redistribución): la región que gana parte del total en calor, la que pierde en verde agua.
 const GANA = ['#f4efe4', '#f6cf7a', '#f29a45', '#e1592b', '#b52a24'];
 const PIERDE = ['#f4efe4', '#b5e3d4', '#5fbfa4', '#25907c', '#0e6158'];
-const ORIGEN = { registro: 'Registro', prueba: 'Prueba del modelo', proyeccion: 'Proyección · techo' };
+const ORIGEN = { registro: 'Registro', prueba: 'Prueba del modelo', proyeccion: 'Proyección' };
 
 /** Altura (t, 0–1) y color de un valor en la escala de la vista. */
 function tono(v, dom, x) {
@@ -35,7 +35,7 @@ export async function iniciar(raiz, { entrada = false } = {}) {
       <p class="tv-leyenda" hidden><span><i style="--c:${GANA[3]}"></i>Gana</span><span><i style="--c:${PIERDE[3]}"></i>Pierde</span></p>
       <p class="tv-desc"></p>
       <p class="tv-nota"><span class="tv-ej"></span><button type="button" class="tv-cargar">Cargar datos</button></p>
-      <a class="tv-globo" href="./">← Volver al globo</a>
+      <a class="tv-globo" href="./globo.html">← Volver al globo</a>
     </header>
     <aside class="extendido" hidden aria-live="polite">
       <button type="button" class="ext-cerrar" aria-label="Cerrar">×</button>

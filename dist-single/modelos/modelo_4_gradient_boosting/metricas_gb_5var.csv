@@ -1,0 +1,3 @@
+anio_test,skill,rmse,p_permutacion,mc_mediana,variables
+2022,0.6830321059485007,0.0008696668567482174,0.002,-0.1416971929616421,sol_otorgadas_lag1 sol_share_lag1 sol_total_lag1 mean_age_lag1 rate_lag2
+2023,0.6712228401238765,0.0014093246440079056,0.006,0.1179886320175028,sol_otorgadas_lag1 sol_share_lag1 sol_total_lag1 mean_age_lag1 rate_lag2
